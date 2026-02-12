@@ -152,27 +152,38 @@ if submitted and ticker:
     chart_path = ""
     metrics = {}
 
-    for chunk in app.stream(state, stream_mode="updates"):
-        for node, output in chunk.items():
-            if node == "researcher":
-                render_agent_card(p1, "DATA ACQUISITION", "The Researcher", "complete", "Market Sentiment Acquired")
-                render_agent_card(p2, "QUANTITATIVE ANALYSIS", "The Analyst", "running", "Fetching OHLCV Data...")
-            elif node == "analyst":
-                chart_path = output.get("chart_path")
-                metrics = output.get("metrics")
-                render_agent_card(p2, "QUANTITATIVE ANALYSIS", "The Analyst", "complete", "Technical Chart Generated")
-                render_agent_card(p3, "FINAL SYNTHESIS", "The Writer", "running", "Compiling Investment Thesis...")
-            elif node == "writer":
-                final_report = output.get("final_report")
-                render_agent_card(p3, "FINAL SYNTHESIS", "The Writer", "complete", "Report Ready for Review")
+    try:
+        for chunk in app.stream(state, stream_mode="updates"):
+            for node, output in chunk.items():
+                if node == "researcher":
+                    render_agent_card(p1, "DATA ACQUISITION", "The Researcher", "complete", "Market Sentiment Acquired")
+                    render_agent_card(p2, "QUANTITATIVE ANALYSIS", "The Analyst", "running", "Fetching OHLCV Data...")
+                elif node == "analyst":
+                    chart_path = output.get("chart_path")
+                    metrics = output.get("metrics")
+                    render_agent_card(p2, "QUANTITATIVE ANALYSIS", "The Analyst", "complete", "Technical Chart Generated")
+                    render_agent_card(p3, "FINAL SYNTHESIS", "The Writer", "running", "Compiling Investment Thesis...")
+                elif node == "writer":
+                    final_report = output.get("final_report")
+                    render_agent_card(p3, "FINAL SYNTHESIS", "The Writer", "complete", "Report Ready for Review")
 
-    # SAVE TO SESSION STATE
-    st.session_state.report_data = {
-        "ticker": clean_ticker,
-        "report": final_report,
-        "chart": chart_path,
-        "metrics": metrics
-    }
+        # SAVE TO SESSION STATE
+        st.session_state.report_data = {
+            "ticker": clean_ticker,
+            "report": final_report,
+            "chart": chart_path,
+            "metrics": metrics
+        }
+    
+    except Exception as e:
+        # Check if it's a RateLimitError
+        if "Rate Limit" in str(e) or "rate limit" in str(e).lower():
+            render_agent_card(p3, "FINAL SYNTHESIS", "The Writer", "error", "Rate Limit Reached")
+            st.error("⚠️ Alta demanda de tráfico. El sistema ha alcanzado su límite de velocidad (Rate Limit). Por favor espera 30 segundos y vuelve a intentar.")
+        else:
+            render_agent_card(p3, "FINAL SYNTHESIS", "The Writer", "error", "Error Occurred")
+            st.error(f"❌ Error durante el análisis: {str(e)}")
+        st.stop()
 
 # 5. RENDER RESULTS (FROM SESSION STATE)
 if st.session_state.report_data:
