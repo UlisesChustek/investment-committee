@@ -1,0 +1,9 @@
+streamlit
+groq
+duckduckgo-search
+yfinance
+pandas
+matplotlib
+mplfinance
+python-dotenv
+fpdf2
